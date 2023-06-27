@@ -1,15 +1,11 @@
 import os
 import tempfile
 import time
-from io import BytesIO
-from tempfile import NamedTemporaryFile
 
 import openai
-from fastapi import UploadFile
-from langchain.document_loaders import TextLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from models.files import File
 from models.settings import CommonsDep
 from utils.file import compute_sha1_from_content
 
@@ -31,8 +27,8 @@ from utils.file import compute_sha1_from_content
 
 #     return transcript
 
-# async def process_audio(upload_file: UploadFile, stats_db):
-async def process_audio(commons: CommonsDep, upload_file: UploadFile, enable_summarization: bool, user, user_openai_api_key):
+# async def process_audio(upload_file: File, stats_db):
+async def process_audio(commons: CommonsDep, file: File, enable_summarization: bool, user, user_openai_api_key):
 
     file_sha = ""
     dateshort = time.strftime("%Y%m%d-%H%M%S")
@@ -43,6 +39,7 @@ async def process_audio(commons: CommonsDep, upload_file: UploadFile, enable_sum
     if user_openai_api_key:
         openai_api_key = user_openai_api_key
 
+    upload_file = file.file
     # Here, we're writing the uploaded file to a temporary file, so we can use it with your existing code.
     with tempfile.NamedTemporaryFile(delete=False, suffix=upload_file.filename) as tmp_file:
         await upload_file.seek(0)
@@ -70,6 +67,6 @@ async def process_audio(commons: CommonsDep, upload_file: UploadFile, enable_sum
 
     # if st.secrets.self_hosted == "false":
     #     add_usage(stats_db, "embedding", "audio", metadata={"file_name": file_meta_name,"file_type": ".txt", "chunk_size": chunk_size, "chunk_overlap": chunk_overlap})
-    commons.documents_vector_store.add_documents(docs_with_metadata)
+    response = commons.documents_vector_store.add_documents(docs_with_metadata)
 
-    return documents_vector_store
+    return response.data
